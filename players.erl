@@ -80,8 +80,8 @@ funnel(NumberOfProcesses, CollectedSnapshots) ->
         NumberOfProcesses == 0 -> 
             Terminated = termination(CollectedSnapshots),
             if
-                Terminated -> true;
-                true -> funnel(lists:length(CollectedSnapshots))
+                Terminated -> io:fwrite("Terminated!");
+                true -> snapshot(), funnel(length(CollectedSnapshots))
             end;
         true -> receive 
             SnapshotOfAProcess ->
@@ -90,4 +90,7 @@ funnel(NumberOfProcesses, CollectedSnapshots) ->
         end
     end.
 
-termination(CollectedSnapshots) -> true.
+termination(CollectedSnapshots) -> 
+    length(
+      lists:filter(fun(S) -> [State|_Messages] = element(2, S), State == 1 end, CollectedSnapshots)
+     ) > 0.
