@@ -33,7 +33,7 @@ decrementing_player(Targets, LastSeen, State) -> receive
             true ->
                 decrementing_player(Targets, Value, State)
         end;
-    {marker} -> 
+    {marker, Funnel} -> 
         if 
             element(1, State) == took_snapshot ->
                 decrementing_player(
@@ -42,7 +42,7 @@ decrementing_player(Targets, LastSeen, State) -> receive
                   {working}
                 );
             element(1, State) == taking_snapshot ->
-                lists:map(fun(Target) -> Target ! {marker} end, Targets),
+                lists:map(fun(Target) -> Target ! {marker, Funnel} end, Targets),
                 Snapshot = {snapshot, element(2, State)},
                 [OutputProcess, _] = Targets,
                 OutputProcess ! Snapshot,
@@ -52,7 +52,7 @@ decrementing_player(Targets, LastSeen, State) -> receive
                   {took_snapshot}
                 );
             element(1, State) == working ->
-                lists:map(fun(Target) -> Target ! {marker} end, Targets),
+                lists:map(fun(Target) -> Target ! {marker, Funnel} end, Targets),
                 decrementing_player(
                   Targets,
                   LastSeen,
@@ -78,4 +78,9 @@ start([NAsString]) ->
     whereis(entry_pid) ! {token, N}.
 
 snapshot() ->
-    whereis(entry_pid) ! {marker}.
+    Funnel = spawn(players, funnel, [3]),
+    whereis(entry_pid) ! {marker, Funnel}.
+
+
+
+    
