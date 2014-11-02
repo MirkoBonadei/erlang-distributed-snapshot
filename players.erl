@@ -6,9 +6,13 @@ output() -> receive
                 output()
             end.
 
-decrementing_player(Targets) -> decrementing_player(Targets, {working}). 
-decrementing_player(Targets, State) -> receive 
-    {target, Target} -> decrementing_player(lists:append(Targets, [Target]), State);
+decrementing_player(Targets) -> decrementing_player(Targets, undefined, {working}). 
+decrementing_player(Targets, LastSeen, State) -> receive 
+    {target, Target} -> decrementing_player(
+                          lists:append(Targets, [Target]),
+                          LastSeen,
+                          State
+                        );
     {token, Value} ->
         Decremented = Value - 1,
         if
@@ -20,30 +24,47 @@ decrementing_player(Targets, State) -> receive
             element(1, State) == taking_snapshot ->
                 decrementing_player(
                   Targets, 
+                  LastSeen,
                   {
                    taking_snapshot,
                    lists:append(element(2, State), [{token, Value}])
                   }
                  );
             true ->
-                decrementing_player(Targets, State)
+                decrementing_player(Targets, LastSeen, State)
         end;
     {take_snapshot} -> 
         lists:map(fun(Target) -> Target ! {marker} end, Targets),
-        decrementing_player(Targets, {taking_snapshot, []});
+        decrementing_player(
+          Targets,
+          LastSeen,
+          {taking_snapshot, []}
+        );
     {marker} -> 
         if 
             element(1, State) == took_snapshot ->
-                decrementing_player(Targets, {working});
+                decrementing_player(
+                  Targets,
+                  LastSeen,
+                  {working}
+                );
             element(1, State) == taking_snapshot ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
                 Snapshot = {snapshot, element(2, State)},
                 [OutputProcess, _] = Targets,
                 OutputProcess ! Snapshot,
-                decrementing_player(Targets, {took_snapshot});
+                decrementing_player(
+                  Targets,
+                  LastSeen,
+                  {took_snapshot}
+                );
             element(1, State) == working ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
-                decrementing_player(Targets, {taking_snapshot, []})
+                decrementing_player(
+                  Targets,
+                  LastSeen,
+                  {taking_snapshot, []}
+                )
         end
 end.
 
