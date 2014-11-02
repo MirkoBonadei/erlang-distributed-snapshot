@@ -1,5 +1,5 @@
 -module(players).
--export([setup/0, snapshot/0, output/0, decrementing_player/1]).
+-export([setup/0, snapshot/0, output/0, decrementing_player/1, start/1]).
 
 output() -> receive
                 M -> io:fwrite("~w~n", [M]),
@@ -16,18 +16,32 @@ decrementing_player(Targets, State) -> receive
                 lists:map(fun(Target) -> Target ! {token, Decremented} end, Targets);
             true -> true
         end,
-        decrementing_player(Targets, State);
+        if 
+            element(1, State) == taking_snapshot ->
+                decrementing_player(
+                  Targets, 
+                  {
+                   taking_snapshot,
+                   lists:append(element(2, State), [{token, Value}])
+                  }
+                 );
+            true ->
+                decrementing_player(Targets, State)
+        end;
     {take_snapshot} -> 
         lists:map(fun(Target) -> Target ! {marker} end, Targets),
         decrementing_player(Targets, {taking_snapshot, []});
     {marker} -> 
         if 
             element(1, State) == took_snapshot ->
+                Snapshot = {snapshot, element(2, State)},
+                [OutputProcess, _] = Targets,
+                OutputProcess ! Snapshot,
                 decrementing_player(Targets, {working});
             element(1, State) == taking_snapshot ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
-                decrementing_player(Targets, {took_snapshot, []});
-            true ->
+                decrementing_player(Targets, {took_snapshot, element(2, State)});
+            element(1, State) == working ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
                 decrementing_player(Targets, {taking_snapshot, []})
         end
@@ -44,6 +58,10 @@ setup() ->
     P2 ! {target, P3},
     P3 ! {target, P1}
     .
+start([NAsString]) ->
+    {N, ""} = string:to_integer(NAsString),
+    io:fwrite("~w~n", [N]),
+    whereis(entry_pid) ! {token, N}.
 
 snapshot() ->
     whereis(entry_pid) ! {take_snapshot}.
