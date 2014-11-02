@@ -24,14 +24,14 @@ decrementing_player(Targets, LastSeen, State) -> receive
             element(1, State) == taking_snapshot ->
                 decrementing_player(
                   Targets, 
-                  LastSeen,
+                  Value,
                   {
                    taking_snapshot,
                    lists:append(element(2, State), [{token, Value}])
                   }
                  );
             true ->
-                decrementing_player(Targets, LastSeen, State)
+                decrementing_player(Targets, Value, State)
         end;
     {take_snapshot} -> 
         lists:map(fun(Target) -> Target ! {marker} end, Targets),
