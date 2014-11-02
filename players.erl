@@ -1,5 +1,5 @@
 -module(players).
--export([setup/0, snapshot/0, output/0, decrementing_player/1, start/1]).
+-export([setup/0, snapshot/0, output/0, decrementing_player/1, start/1, funnel/1]).
 
 output() -> receive
                 M -> io:fwrite("~w~n", [M]),
@@ -44,8 +44,7 @@ decrementing_player(Targets, LastSeen, State) -> receive
             element(1, State) == taking_snapshot ->
                 lists:map(fun(Target) -> Target ! {marker, Funnel} end, Targets),
                 Snapshot = {snapshot, element(2, State)},
-                [OutputProcess, _] = Targets,
-                OutputProcess ! Snapshot,
+                Funnel ! Snapshot,
                 decrementing_player(
                   Targets,
                   LastSeen,
@@ -80,6 +79,12 @@ start([NAsString]) ->
 snapshot() ->
     Funnel = spawn(players, funnel, [3]),
     whereis(entry_pid) ! {marker, Funnel}.
+
+funnel(NumberOfProcesses) ->
+    receive 
+        Message -> io:fwrite("Snapshot[~w]: ~w~n", [self(), Message])
+    end,
+    funnel(NumberOfProcesses - 1).
 
 
 
