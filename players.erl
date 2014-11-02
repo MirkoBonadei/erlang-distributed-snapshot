@@ -74,12 +74,14 @@ snapshot() ->
     Funnel = spawn(players, funnel, [3]),
     whereis(entry_pid) ! {marker, Funnel}.
 
-funnel(NumberOfProcesses) ->
-    receive 
-        Message -> io:fwrite("Snapshot[~w]: ~w~n", [self(), Message])
-    end,
-    funnel(NumberOfProcesses - 1).
+funnel(NumberOfProcesses) -> funnel(NumberOfProcesses, []).
+funnel(NumberOfProcesses, CollectedSnapshots) ->
+    if 
+        NumberOfProcesses == 0 -> true;
+        true -> receive 
+            SnapshotOfAProcess ->
+                io:fwrite("Snapshot[~w]: ~w~n", [self(), SnapshotOfAProcess]),
+                funnel(NumberOfProcesses - 1, lists:append(CollectedSnapshots, [SnapshotOfAProcess]))
+        end
+    end.
 
-
-
-    
