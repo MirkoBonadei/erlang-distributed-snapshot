@@ -1,11 +1,7 @@
 -module(players).
--export([setup/0, snapshot/0, output/0, decrementing_player/1, start/1, funnel/1]).
+-export([setup/0, snapshot/0, decrementing_player/0, decrementing_player/1, start/1, funnel/1]).
 
-output() -> receive
-                M -> io:fwrite("~w~n", [M]),
-                output()
-            end.
-
+decrementing_player() -> decrementing_player([]). 
 decrementing_player(Targets) -> decrementing_player(Targets, undefined, {working}). 
 decrementing_player(Targets, LastSeen, State) -> receive 
     {target, Target} -> decrementing_player(
@@ -61,12 +57,10 @@ decrementing_player(Targets, LastSeen, State) -> receive
 end.
 
 setup() ->
-    O = spawn(players, output, []),
-    register(output_pid, O),
-    P1 = spawn(players, decrementing_player, [[O]]),
+    P1 = spawn(players, decrementing_player, []),
     register(entry_pid, P1),
-    P2 = spawn(players, decrementing_player, [[O]]),
-    P3 = spawn(players, decrementing_player, [[O]]),
+    P2 = spawn(players, decrementing_player, []),
+    P3 = spawn(players, decrementing_player, []),
     P1 ! {target, P2},
     P2 ! {target, P3},
     P3 ! {target, P1}
