@@ -1,4 +1,8 @@
 -module(players).
--export([output/0]).
+-export([setup/0, output/0]).
 
-output() -> io:fwrite("hello, world\n").
+output() -> receive
+                M -> io:fwrite(M)
+            end.
+
+setup() -> spawn(players, output, []).
