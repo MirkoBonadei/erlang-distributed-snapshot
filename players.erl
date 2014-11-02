@@ -4,7 +4,7 @@
 decrementing_player() -> decrementing_player([]). 
 decrementing_player(Targets) -> decrementing_player(Targets, 100, {working}). 
 decrementing_player(Targets, LastSeen, State) -> 
-    io:fwrite("State of ~w: ~w~n", [self(), State]),
+    %io:fwrite("State of ~w: ~w~n", [self(), State]),
     receive 
     {target, Target} -> decrementing_player(
                           lists:append(Targets, [Target]),
@@ -41,7 +41,6 @@ decrementing_player(Targets, LastSeen, State) ->
                     fun(Target) -> Target /= Sender end,
                     element(3, State)
                 ),
-                io:fwrite("Remaining: ~w~n", [Remaining]),
                 if 
                     length(Remaining) == 0 -> 
                         Funnel ! {snapshot_terminated};
@@ -109,10 +108,10 @@ collect(Processes, CollectedSnapshots) ->
         length(CollectedSnapshots) < length(Processes) ->
             receive 
                 {snapshot, Snapshot} -> 
-                    io:fwrite("~w~n", [Snapshot]),
                     collect(Processes, lists:append(CollectedSnapshots, [Snapshot]))
             end;
         true ->
+            io:fwrite("~w~n", [CollectedSnapshots]),
             Termination = termination(CollectedSnapshots),
             if 
                 Termination -> true;
