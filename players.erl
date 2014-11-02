@@ -77,7 +77,12 @@ snapshot() ->
 funnel(NumberOfProcesses) -> funnel(NumberOfProcesses, []).
 funnel(NumberOfProcesses, CollectedSnapshots) ->
     if 
-        NumberOfProcesses == 0 -> true;
+        NumberOfProcesses == 0 -> 
+            Terminated = termination(CollectedSnapshots),
+            if
+                Terminated -> true;
+                true -> funnel(lists:length(CollectedSnapshots))
+            end;
         true -> receive 
             SnapshotOfAProcess ->
                 io:fwrite("Snapshot[~w]: ~w~n", [self(), SnapshotOfAProcess]),
@@ -85,3 +90,4 @@ funnel(NumberOfProcesses, CollectedSnapshots) ->
         end
     end.
 
+termination(CollectedSnapshots) -> true.
