@@ -63,7 +63,7 @@ decrementing_player(Targets, LastSeen, State) -> receive
                 decrementing_player(
                   Targets,
                   LastSeen,
-                  {taking_snapshot, []}
+                  {taking_snapshot, [LastSeen]}
                 )
         end
 end.
