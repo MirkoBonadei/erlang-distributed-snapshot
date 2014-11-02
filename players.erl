@@ -34,13 +34,13 @@ decrementing_player(Targets, State) -> receive
     {marker} -> 
         if 
             element(1, State) == took_snapshot ->
-                Snapshot = {snapshot, element(2, State)},
-                [OutputProcess, _] = Targets,
-                OutputProcess ! Snapshot,
                 decrementing_player(Targets, {working});
             element(1, State) == taking_snapshot ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
-                decrementing_player(Targets, {took_snapshot, element(2, State)});
+                Snapshot = {snapshot, element(2, State)},
+                [OutputProcess, _] = Targets,
+                OutputProcess ! Snapshot,
+                decrementing_player(Targets, {took_snapshot});
             element(1, State) == working ->
                 lists:map(fun(Target) -> Target ! {marker} end, Targets),
                 decrementing_player(Targets, {taking_snapshot, []})
