@@ -92,10 +92,11 @@ start([NAsString]) ->
     whereis(entry_pid1) ! {token, N, self()}.
 
 snapshot() ->
-    Funnel = spawn(players, funnel, [[whereis(entry_pid1), whereis(entry_pid2), whereis(entry_pid3)]]),
-    whereis(entry_pid1) ! {marker, Funnel, start}.
+    spawn(players, funnel, [[whereis(entry_pid1), whereis(entry_pid2), whereis(entry_pid3)]]).
 
-funnel(Processes) ->
+funnel(Processes = [Pid1, _Pid2, _Pid3]) ->
+    FunnelPid = self(),
+    Pid1 ! {marker, FunnelPid, start},
     receive 
             {snapshot_terminated} -> 
                 lists:map(fun(P) -> P ! {tell_snapshot, self()} end, Processes),
