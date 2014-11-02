@@ -33,13 +33,6 @@ decrementing_player(Targets, LastSeen, State) -> receive
             true ->
                 decrementing_player(Targets, Value, State)
         end;
-    {take_snapshot} -> 
-        lists:map(fun(Target) -> Target ! {marker} end, Targets),
-        decrementing_player(
-          Targets,
-          LastSeen,
-          {taking_snapshot, []}
-        );
     {marker} -> 
         if 
             element(1, State) == took_snapshot ->
@@ -85,4 +78,4 @@ start([NAsString]) ->
     whereis(entry_pid) ! {token, N}.
 
 snapshot() ->
-    whereis(entry_pid) ! {take_snapshot}.
+    whereis(entry_pid) ! {marker}.
