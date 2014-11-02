@@ -1,13 +1,14 @@
 -module(players).
--export([setup/0, output/0, decrementing_player/1]).
+-export([setup/0, snapshot/0, output/0, decrementing_player/1]).
 
 output() -> receive
                 M -> io:fwrite("~w~n", [M]),
                 output()
             end.
 
-decrementing_player(Targets) -> receive 
-    {target, Target} -> decrementing_player(lists:append(Targets, [Target]));
+decrementing_player(Targets) -> decrementing_player(Targets, {working}). 
+decrementing_player(Targets, State) -> receive 
+    {target, Target} -> decrementing_player(lists:append(Targets, [Target]), State);
     {token, Value} ->
         Decremented = Value - 1,
         if
@@ -15,7 +16,21 @@ decrementing_player(Targets) -> receive
                 lists:map(fun(Target) -> Target ! {token, Decremented} end, Targets);
             true -> true
         end,
-        decrementing_player(Targets)
+        decrementing_player(Targets, State);
+    {take_snapshot} -> 
+        lists:map(fun(Target) -> Target ! {marker} end, Targets),
+        decrementing_player(Targets, {taking_snapshot, []});
+    {marker} -> 
+        if 
+            element(1, State) == took_snapshot ->
+                decrementing_player(Targets, {working});
+            element(1, State) == taking_snapshot ->
+                lists:map(fun(Target) -> Target ! {marker} end, Targets),
+                decrementing_player(Targets, {took_snapshot, []});
+            true ->
+                lists:map(fun(Target) -> Target ! {marker} end, Targets),
+                decrementing_player(Targets, {taking_snapshot, []})
+        end
 end.
 
 setup() ->
@@ -30,4 +45,5 @@ setup() ->
     P3 ! {target, P1}
     .
 
-
+snapshot() ->
+    whereis(entry_pid) ! {take_snapshot}.
